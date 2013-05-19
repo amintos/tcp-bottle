@@ -1,0 +1,107 @@
+<!doctype html>
+
+<html>
+	<head>
+		<title>Live Traffic</title>
+		<script src="static/flotr2.min.js" type="text/javascript"></script>
+		<script src="static/jquery-1.8.0.min.js" type="text/javascript"></script>
+	</head>
+	
+	<body style='font-family:sans-serif;'>
+		<h1><img src='static/action_log.png' /> Live Traffic</h1>
+		
+		<h2>Total</h2>
+		<table>
+			<tr>
+				<th>Second<th>
+				<th>Minute<th>
+				<th>Hour<th>
+				<th>Day<th>
+				<th>Month<th>
+				<th>Year<th>
+			</tr>
+				
+			<tr style='font-family:monospace;'>
+				<td id='total-sec'>---<td>
+				<td id='total-min'>---<td>
+				<td id='total-hour'>---<td>
+				<td id='total-day'>---<td>
+				<td id='total-month'>---<td>
+				<td id='total-year'>---<td>
+			</tr>
+		</table>
+		
+		<hr>
+		
+		<h2>60 seconds</h2>
+		<div id="chart-container-min" style="width:400px;height:300px;"></div>
+		
+		<h2>60 minutes</h2>
+		<div id="chart-container-hour" style="width:400px;height:300px;"></div>
+		
+		<h2>24 hours</h2>
+		<div id="chart-container-day" style="width:400px;height:300px;"></div>
+		
+		<h2>30 days</h2>
+		<div id="chart-container-mon" style="width:400px;height:300px;"></div>
+		
+		<h2>12 months</h2>
+		<div id="chart-container-year" style="width:400px;height:300px;"></div>
+		
+		<hr>
+		<small>Powered by RaspberryPi, bottle.py, tcpdump, flotr2 and jQuery</small>
+
+		<script type="text/javascript">
+			function update() {
+				$.getJSON('history',
+					function history_callback(result) {
+					
+						function do_graph(coords, label, divtag) {
+							var data, graph, container;
+							data = [
+								{ data : coords, label: label, lines : { fill : true, fillOpacity: 0.5,  } }
+								
+							];
+
+							container = document.getElementById(divtag);
+
+							graph = Flotr.draw(container, data, {
+								legend : {
+									position : 'se',
+									backgroundColor : '#eeeeee'
+								},
+								yaxis : {
+									min : 0,
+									autoscaleMargin : 0,
+								},
+								HtmlText : false
+							});
+						};
+						
+						do_graph(result[0], 'Traffic [KiB/s]', 'chart-container-min');
+						do_graph(result[1], 'Traffic [MiB/min]', 'chart-container-hour');
+						do_graph(result[2], 'Traffic [MiB/hour]', 'chart-container-day');
+						do_graph(result[3], 'Traffic [GiB/day]', 'chart-container-mon');
+						do_graph(result[4], 'Traffic [GiB/month]', 'chart-container-year');
+					}
+				);
+				
+				$.getJSON('accumulated', 
+					function accumulated_callback(result) {
+						document.getElementById('total-sec').innerHTML = (result.minute / 1024 / 60).toFixed(1) + ' KiB'
+						document.getElementById('total-min').innerHTML = (result.minute / 1024).toFixed(1) + ' KiB'
+						document.getElementById('total-hour').innerHTML = (result.hour / 1024 / 1024).toFixed(1) + ' MiB'
+						document.getElementById('total-day').innerHTML = (result.day / 1024 / 1024).toFixed(1) + ' MiB'
+						document.getElementById('total-month').innerHTML = (result.month / 1024 / 1024 / 1024).toFixed(1) + ' GiB'
+						document.getElementById('total-year').innerHTML = (result.year / 1024 / 1024 / 1024).toFixed(1) + ' GiB'
+					}
+				);
+				
+				setTimeout('update()', 500);
+			};
+			update();
+		</script>
+
+
+	</body>
+</html>
